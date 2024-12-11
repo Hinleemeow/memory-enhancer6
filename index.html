@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Enhancement Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+        h1 {
+            color: #333;
+        }
+        #game-container {
+            margin-top: 20px;
+        }
+        #input-section {
+            margin-top: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #difficulty-settings, #game-info {
+            margin: 20px;
+        }
+        #level-display {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        #timer {
+            font-size: 18px;
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Memory Enhancement Game</h1>
+
+    <div id="difficulty-settings">
+        <h3>Difficulty Settings</h3>
+        <button onclick="setDifficulty(5, 20)">Easy (5 sec)</button>
+        <button onclick="setDifficulty(3, 40)">Medium (3 sec)</button>
+        <button onclick="setDifficulty(2, 90)">Hard (2 sec)</button>
+    </div>
+
+    <div id="game-info">
+        <p id="level-display">Level: 1</p>
+        <p id="score-display">Score: 0</p>
+        <p id="instructions">Select a mode and press "Start Game" to begin!</p>
+        <button onclick="setMode('numbers')">Numbers Mode</button>
+        <button onclick="setMode('words')">Words Mode</button>
+        <button onclick="startGame()">Start Game</button>
+        <button onclick="resetGame()">Reset Game</button>
+    </div>
+
+    <div id="game-container">
+        <p id="display-area" style="font-size: 24px; font-weight: bold;"></p>
+        <p id="timer"></p>
+    </div>
+
+    <div id="input-section">
+        <input type="text" id="user-input" placeholder="Type here..." disabled>
+        <button onclick="submitAnswer()" disabled>Submit</button>
+    </div>
+
+    <script>
+        let currentLevel = 1;
+        let currentSequence = [];
+        let displayTime = 5; // Default difficulty is Easy
+        let intervalTime = 20; // Default interval
+        let mode = "numbers"; // Default mode
+        let score = 0; // Tracks correct answers
+        let usedWords = []; // Tracks used words
+        let timerInterval; // Stores the interval for the timer countdown
+
+        const wordsPool = [
+  "apple", "banana", "cherry", "dog", "elephant", "frog", "guitar", "house", "igloo", "jacket",
+  "kiwi", "lemon", "mango", "notebook", "orange", "pencil", "quilt", "rose", "sunflower", "tiger",
+  "umbrella", "violet", "walnut", "xylophone", "yacht", "zebra", "acorn", "balloon", "cactus", "drum",
+  "engine", "flute", "grape", "harmony", "iceberg", "jungle", "kangaroo", "lighthouse", "mountain", "notebook",
+  "oak", "piano", "quasar", "robot", "snake", "tree", "unicorn", "vampire", "whale", "xenon",
+  "yellow", "zebra", "avocado", "book", "cucumber", "dolphin", "elephant", "fish", "giraffe", "horizon",
+  "ice", "jelly", "kettle", "lizard", "monkey", "noodle", "octopus", "pillow", "quilt", "raccoon",
+  "sapphire", "tulip", "umbrella", "vortex", "windmill", "xylophone", "yogurt", "zoo", "airplane",
+  "bird", "cloud", "dinosaur", "eggplant", "frenchfries", "guitar", "honey", "instrument", "jellyfish", "kite",
+  "lemonade", "marble", "noodle", "octagon", "penguin", "quicksand", "rocket", "sunset", "turtle", "universe",
+  "violet", "wizard", "x-ray", "yellowstone", "zombie"
+];
+
+        function setDifficulty(seconds, interval) {
+            displayTime = seconds;
+            intervalTime = interval;
+            alert(`Difficulty set to ${seconds} seconds with an interval of ${interval} seconds!`);
+        }
+
+        function setMode(selectedMode) {
+            mode = selectedMode;
+            alert(`Mode set to ${mode.charAt(0).toUpperCase() + mode.slice(1)} Mode!`);
+        }
+
+        function startGame() {
+            document.getElementById('level-display').textContent = `Level: ${currentLevel}`;
+            document.getElementById('score-display').textContent = `Score: ${score}`;
+            generateSequence();
+        }
+
+        function generateSequence() {
+            const displayArea = document.getElementById('display-area');
+            currentSequence = [];
+            const length = 4 + currentLevel; // Start with 4 and add 1 for each level
+
+            if (mode === "numbers") {
+                for (let i = 0; i < length; i++) {
+                    currentSequence.push(Math.floor(Math.random() * 10));
+                }
+            } else {
+                let availableWords = wordsPool.filter(word => !usedWords.includes(word));
+                if (availableWords.length < length) {
+                    usedWords = []; // Reset used words when all are used
+                    availableWords = [...wordsPool];
+                }
+                for (let i = 0; i < length; i++) {
+                    const word = availableWords.splice(Math.floor(Math.random() * availableWords.length), 1)[0];
+                    currentSequence.push(word);
+                    usedWords.push(word);
+                }
+            }
+
+            displayArea.textContent = currentSequence.join(" ");
+
+            setTimeout(() => {
+                displayArea.textContent = "";
+                startIntervalTimer();
+            }, displayTime * 1000);
+        }
+
+        function startIntervalTimer() {
+            const timerElement = document.getElementById('timer');
+            let timeLeft = intervalTime;
+
+            timerElement.textContent = `Time to answer: ${timeLeft}s`;
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerElement.textContent = `Time to answer: ${timeLeft}s`;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    timerElement.textContent = "";
+                    enableInput();
+                }
+            }, 1000);
+        }
+
+        function enableInput() {
+            document.getElementById('user-input').disabled = false;
+            document.querySelector('#input-section button').disabled = false;
+        }
+
+        function submitAnswer() {
+            const userInput = document.getElementById('user-input').value.trim().replace(/\s+/g, "");
+            const correctSequence = currentSequence.join("");
+
+            if (userInput === correctSequence) {
+                score++;
+                document.getElementById('score-display').textContent = `Score: ${score}`;
+
+                if (score % 10 === 0) {
+                    currentLevel++;
+                    alert(`Level up! You are now on level ${currentLevel}.`);
+                }
+
+                setTimeout(startGame, 1000); // Delay to show correct highlights
+            } else {
+                alert("Incorrect! Game resetting.");
+                resetGame();
+            }
+
+            document.getElementById('user-input').value = "";
+            document.getElementById('user-input').disabled = true;
+            document.querySelector('#input-section button').disabled = true;
+        }
+
+        function resetGame() {
+            currentLevel = 1;
+            score = 0;
+            usedWords = [];
+            clearInterval(timerInterval);
+
+            document.getElementById('level-display').textContent = `Level: ${currentLevel}`;
+            document.getElementById('score-display').textContent = `Score: ${score}`;
+            document.getElementById('display-area').textContent = "";
+            document.getElementById('timer').textContent = "";
+            document.getElementById('user-input').value = "";
+            document.getElementById('user-input').disabled = true;
+            document.querySelector('#input-section button').disabled = true;
+        }
+
+        // Allow "Enter" key to submit answers
+        document.getElementById('user-input').addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                submitAnswer();
+            }
+        });
+    </script>
+</body>
+</html>
